@@ -18,7 +18,7 @@ $estado_mg = false;
 $error_detalle = "";
 
 // Credenciales 
-$uri_mongo = "mongodb+srv://juandiegoguasca0_db_user:200997@tu-cluster.mongodb.net/?retryWrites=true&w=majority";
+$uri_mongo = "mongodb+srv://juandiegoguasca0_db_user:200997@cluster0.8ntt77g.mongodb.net/?retryWrites=true&w=majority";
 
 try {
     //FASE 1: INSERCIÓN EN POSTGRESQL (RENDER)
