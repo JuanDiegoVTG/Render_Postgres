@@ -56,9 +56,10 @@ try {
         $documentos_mg = $coleccion_mg->find([], ['sort' => ['_id' => -1]]);
     }
 
-} catch (Exception $e) {
-    $error_pg = $e->getMessage();
-}
+    } catch (Exception $e) {
+         // CAMBIA ESTO PARA VER EL ERROR REAL EN PANTALLA
+        $error_detalle = "Error técnico: " . $e->getMessage() . " | Código: " . $e->getCode();
+    }
 ?>
 
 <!DOCTYPE html>
