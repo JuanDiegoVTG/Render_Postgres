@@ -10,7 +10,7 @@ $error_mg = "";
 $estado_pg = false;
 $estado_mg = false;
 
-$uri_mongo = "mongodb+srv://juandiegoguasca0_db_user:200997@cluster0.8ntt77g.mongodb.net/?retryWrites=true&w=majority&connectTimeoutMS=10000";
+$uri_mongo = 'mongodb+srv://juandiegoguasca0_db_user:200997@cluster0.8ntt77g.mongodb.net/sena_db?retryWrites=true&w=majority';
 
 try {
     // FASE 1: INSERCIÓN EN POSTGRESQL
@@ -72,11 +72,14 @@ try {
 <body class="bg-light p-4">
 
 <?php if ($estado_pg && $estado_mg): ?>
-    <div class="alert alert-success"><strong>¡Éxito!</strong> Datos guardados en Postgres y respaldados en MongoDB.</div>
-<?php elseif ($estado_pg): ?>
-    <div class="alert alert-warning">Guardado en Postgres, pero falló MongoDB: <?php echo $error_mg; ?></div>
+    <div class="alert alert-success"><strong>¡Éxito!</strong> Datos guardados en ambos motores.</div>
+<?php elseif ($estado_pg && !$estado_mg): ?>
+    <div class="alert alert-warning">
+        <strong>Guardado en Postgres, pero falló MongoDB:</strong><br>
+        <?php echo !empty($error_mg) ? htmlspecialchars($error_mg) : "Error desconocido de conexión."; ?>
+    </div>
 <?php else: ?>
-    <div class="alert alert-danger">Error: <?php echo $error_pg; ?></div>
+    <div class="alert alert-danger"><strong>Error general:</strong> <?php echo htmlspecialchars($error_pg); ?></div>
 <?php endif; ?>
 
 <div class="row mt-4">
