@@ -44,7 +44,7 @@ try {
                 $estado_mg = true;
             }
         } catch (Exception $e) {
-            $error_mg = $e->getMessage();
+            $error_mg = "Error de conexión MongoDB: " . $e->getMessage();
         }
     }
 
