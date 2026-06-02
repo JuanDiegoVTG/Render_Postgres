@@ -10,8 +10,7 @@ $error_mg = "";
 $estado_pg = false;
 $estado_mg = false;
 
-// Credenciales (Asegúrate de que la URI tenga tu contraseña real)
-$uri_mongo = "mongodb+srv://juandiegoguasca0_db_user:200997@cluster0.8ntt77g.mongodb.net/?retryWrites=true&w=majority";
+$uri_mongo = "mongodb+srv://juandiegoguasca0_db_user:200997@cluster0.8ntt77g.mongodb.net/?retryWrites=true&w=majority&connectTimeoutMS=10000";
 
 try {
     // FASE 1: INSERCIÓN EN POSTGRESQL
@@ -44,7 +43,8 @@ try {
                 $estado_mg = true;
             }
         } catch (Exception $e) {
-            $error_mg = "Error de conexión MongoDB: " . $e->getMessage();
+            // Esto te mostrará el mensaje técnico del driver
+            $error_mg = "Detalle técnico: " . $e->getMessage();
         }
     }
 
