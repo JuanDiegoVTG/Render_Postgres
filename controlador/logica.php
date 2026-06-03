@@ -10,7 +10,7 @@ $error_mg = "";
 $estado_pg = false;
 $estado_mg = false;
 
-$uri_mongo = 'mongodb+srv://juandiegoguasca0_db_user:200997@cluster0.8ntt77g.mongodb.net/sena_db?retryWrites=true&w=majority';
+$uri_mongo = 'mongodb+srv://juandiegoguasca0_db_user:0WJGyl5OAMtz33rP@cluster0.8ntt77g.mongodb.net/?appName=Cluster0';
 
 try {
     // FASE 1: INSERCIÓN EN POSTGRESQL
@@ -26,7 +26,7 @@ try {
     ]);
     $estado_pg = true;
 
-    // FASE 2: RESPALDO EN MONGODB (Solo si existe la extensión)
+    // FASE 2: RESPALDO EN MONGODB 
     if (extension_loaded('mongodb')) {
         try {
             $cliente_mg = new MongoDB\Client($uri_mongo);
