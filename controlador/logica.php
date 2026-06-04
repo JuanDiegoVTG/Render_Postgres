@@ -2,7 +2,7 @@
 // 1. Carga de dependencias
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// 2. Inicialización de variables para evitar errores "Undefined"
+// 2. Inicialización de variables de estado y datos
 $tabla_pg = [];
 $documentos_mg = [];
 $error_pg = "";
@@ -10,56 +10,59 @@ $error_mg = "";
 $estado_pg = false;
 $estado_mg = false;
 
-// URI 
+// URI de conexión oficial a MongoDB Atlas
 $uri_mongo = 'mongodb+srv://juandiegoguasca0_db_user:0WJGyl5OAMtz33rP@cluster0.8ntt77g.mongodb.net/?appName=Cluster0';
 
 try {
-    // FASE 1: INSERCIÓN EN POSTGRESQL 
-
+    // ==========================================
+    // FASE 1: INSERCIÓN EN POSTGRESQL (RENDER)
+    // ==========================================
     $conexion_pg = new PDO('pgsql:host=dpg-d8f3edeq1p3s73dgojkg-a.oregon-postgres.render.com;dbname=sena_6eak','sena_6eak_user','DlJt2UPz4jFSE9Uk6gmz7vS27rva6yGG');
     $conexion_pg->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $sql_pg = "INSERT INTO aprendices (tipo_documento, numero_documento, nombre, correo_electronico, telefono, numero_ficha, programa_formacion, jornada, estado, detalles, nota1, nota2, nota3) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $registrar_pg = $conexion_pg->prepare($sql_pg);
     $registrar_pg->execute([
-        $_POST["tipo_doc"], $_POST["num_doc"], $_POST["nom"], $_POST["correo"], 
-        $_POST["tel"], $_POST["ficha"], $_POST["programa"], $_POST["jornada"], 
-        $_POST["estado"], $_POST["det"], $_POST["nota1"], $_POST["nota2"], $_POST["nota3"]
+        $_POST["tipo_doc"] ?? '', $_POST["num_doc"] ?? '', $_POST["nom"] ?? '', $_POST["correo"] ?? '', 
+        $_POST["tel"] ?? '', $_POST["ficha"] ?? '', $_POST["programa"] ?? '', $_POST["jornada"] ?? '', 
+        $_POST["estado"] ?? '', $_POST["det"] ?? '', $_POST["nota1"] ?? 0, $_POST["nota2"] ?? 0, $_POST["nota3"] ?? 0
     ]);
     $estado_pg = true;
 
+    // ==========================================
     // FASE 2: RESPALDO EN MONGODB ATLAS
-    
+    // ==========================================
+    // Validamos que Render tenga la extensión instalada antes de ejecutar
     if (extension_loaded('mongodb')) {
         try {
             $cliente_mg = new MongoDB\Client($uri_mongo);
             $coleccion_mg = $cliente_mg->sena_db->respaldo_aprendices;
 
-            // EL ORDEN EXACTO BASADO EN TU CAPTURA DE ATLAS:
+            // Estructura anidada aprobada para la base de datos documental
             $documento = [
                 "identificacion" => [
-                    "tipo" => $_POST["tipo_doc"],
-                    "numero" => $_POST["num_doc"]
+                    "tipo" => $_POST["tipo_doc"] ?? '',
+                    "numero" => $_POST["num_doc"] ?? ''
                 ],
                 "datos_personales" => [
-                    "nombre" => $_POST["nom"],
+                    "nombre" => $_POST["nom"] ?? '',
                     "contacto" => [
-                        "telefono" => $_POST["tel"],
-                        "correo" => $_POST["correo"]
+                        "telefono" => $_POST["tel"] ?? '',
+                        "correo" => $_POST["correo"] ?? ''
                     ]
                 ],
                 "academico" => [
-                    "ficha" => $_POST["ficha"],
-                    "programa" => $_POST["programa"],
-                    "jornada" => $_POST["jornada"],
-                    "estado" => $_POST["estado"]
+                    "ficha" => $_POST["ficha"] ?? '',
+                    "programa" => $_POST["programa"] ?? '',
+                    "jornada" => $_POST["jornada"] ?? '',
+                    "estado" => $_POST["estado"] ?? ''
                 ],
                 "calificaciones" => [
-                    "nota1" => (float)$_POST["nota1"],
-                    "nota2" => (float)$_POST["nota2"],
-                    "nota3" => (float)$_POST["nota3"]
+                    "nota1" => (float)($_POST["nota1"] ?? 0),
+                    "nota2" => (float)($_POST["nota2"] ?? 0),
+                    "nota3" => (float)($_POST["nota3"] ?? 0)
                 ],
-                "observaciones" => $_POST["det"],
+                "observaciones" => $_POST["det"] ?? '',
                 "fecha_respaldo" => new MongoDB\BSON\UTCDateTime()
             ];
 
@@ -70,22 +73,28 @@ try {
             $error_mg = "Detalle técnico MongoDB: " . $e->getMessage();
         }
     } else {
-        $error_mg = "La extensión de MongoDB no está activa en Render.";
+        $error_mg = "La extensión de MongoDB no está activa en el servidor de Render.";
     }
 
+    // ==========================================
     // FASE 3: CONSULTAS DE VERIFICACIÓN
+    // ==========================================
     
     // Consulta PostgreSQL
     $consulta_pg = $conexion_pg->query("SELECT * FROM aprendices ORDER BY id DESC");
     $tabla_pg = $consulta_pg->fetchAll(PDO::FETCH_ASSOC);
 
-    // Consulta MongoDB 
-    if (isset($coleccion_mg) && $estado_mg) {
-        $documentos_mg = $coleccion_mg->find([], ['sort' => ['_id' => -1]]);
+    // Consulta MongoDB (Solo si la conexión fue instanciada)
+    if (isset($coleccion_mg)) {
+        try {
+            $documentos_mg = $coleccion_mg->find([], ['sort' => ['_id' => -1]]);
+        } catch (Exception $e) {
+            $error_mg = "Error al recuperar documentos: " . $e->getMessage();
+        }
     }
 
 } catch (Exception $e) {
-    // Captura errores generales o de Postgres
+    // Captura errores críticos de conexión de Postgres
     $error_pg = "Error crítico Postgres: " . $e->getMessage();
 }
 ?>
@@ -103,11 +112,11 @@ try {
     <div class="alert alert-success shadow-sm"><strong>¡Doble Inserción Exitosa!</strong> Datos guardados en PostgreSQL y respaldados en MongoDB Atlas.</div>
 <?php elseif ($estado_pg && !$estado_mg): ?>
     <div class="alert alert-warning shadow-sm">
-        <strong>Inserción Parcial:</strong> Guardado en Postgres, pero falló MongoDB.<br>
-        <small><?php echo !empty($error_mg) ? htmlspecialchars($error_mg) : "Error desconocido."; ?></small>
+        <strong>Inserción Parcial:</strong> Guardado en Postgres, pero falló el respaldo en MongoDB.<br>
+        <small><?php echo htmlspecialchars($error_mg ?? 'Error desconocido en MongoDB.'); ?></small>
     </div>
 <?php else: ?>
-    <div class="alert alert-danger shadow-sm"><strong>Error general:</strong> <?php echo htmlspecialchars($error_pg); ?></div>
+    <div class="alert alert-danger shadow-sm"><strong>Error general:</strong> <?php echo htmlspecialchars($error_pg ?? 'Error desconocido de conexión.'); ?></div>
 <?php endif; ?>
 
 <div class="row mt-4">
@@ -124,9 +133,16 @@ try {
                     <tbody>
                         <?php foreach($tabla_pg as $f): ?>
                         <tr>
-                            <td><?= htmlspecialchars($f['numero_ficha']) ?></td>
-                            <td class="text-start"><?= htmlspecialchars($f['nombre']) ?></td>
-                            <td class="fw-bold text-primary"><?= number_format(($f['nota1']+$f['nota2']+$f['nota3'])/3, 1) ?></td>
+                            <td><?= htmlspecialchars($f['numero_ficha'] ?? '') ?></td>
+                            <td class="text-start"><?= htmlspecialchars($f['nombre'] ?? '') ?></td>
+                            <td class="fw-bold text-primary">
+                                <?php 
+                                    $n1 = $f['nota1'] ?? 0;
+                                    $n2 = $f['nota2'] ?? 0;
+                                    $n3 = $f['nota3'] ?? 0;
+                                    echo number_format(($n1 + $n2 + $n3) / 3, 1); 
+                                ?>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -148,9 +164,9 @@ try {
                     <tbody>
                         <?php foreach($documentos_mg as $d): ?>
                         <tr>
-                            <td class="font-monospace text-success"><?= substr((string)$d['_id'], -8) ?></td>
-                            <td class="text-start"><?= $d['datos_personales']['nombre'] ?? 'N/A' ?></td>
-                            <td><?= $d['academico']['ficha'] ?? 'N/A' ?></td>
+                            <td class="font-monospace text-success"><?= substr((string)($d['_id'] ?? ''), -8) ?></td>
+                            <td class="text-start"><?= htmlspecialchars($d['datos_personales']['nombre'] ?? 'N/A') ?></td>
+                            <td><?= htmlspecialchars($d['academico']['ficha'] ?? 'N/A') ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
