@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     # 2. Instalar y habilitar extensiones de PostgreSQL
     && docker-php-ext-install pdo pdo_pgsql pgsql \
-    # 3. Compilar, instalar y habilitar la extensión de MongoDB
-    && pecl install mongodb \
+    # 3. Compilar, instalar y habilitar la extensión de MongoDB (Versión compatible)
+    && pecl install mongodb-1.17.2 \
     && docker-php-ext-enable mongodb
 
 # Habilitar mod_rewrite de Apache
